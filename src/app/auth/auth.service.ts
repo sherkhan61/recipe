@@ -1,8 +1,9 @@
 import {Injectable} from "@angular/core";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {catchError, tap} from "rxjs/operators";
-import {throwError, ReplaySubject} from "rxjs";
+import {throwError, BehaviorSubject} from "rxjs";
 import {User} from "./user.model";
+import {Router} from "@angular/router";
 
 
 export interface AuthResponseData {
@@ -16,9 +17,10 @@ export interface AuthResponseData {
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
-  user = new ReplaySubject<User>();
+  user = new BehaviorSubject<User>(null);
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private router: Router) {
   }
 
   signup(email: string, password: string) {
@@ -45,6 +47,11 @@ export class AuthService {
       .pipe(catchError(this.handleError), tap(resData => {
         this.handleAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn);
       }));
+  }
+
+  logout() {
+    this.user.next(null);
+    this.router.navigate(['/auth']);
   }
 
   private handleAuthentication(email: string, userId: string, token: string, expiresIn: number) {

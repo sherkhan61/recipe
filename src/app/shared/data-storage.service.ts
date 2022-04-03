@@ -24,23 +24,20 @@ export class DataStorageService {
   }
 
   fetchRecipes() {
-    return this.authService.user.pipe(
-      take(1),
-      exhaustMap(user => {
-        return this.http
-          .get<Recipe[]>('https://recipe-f4353-default-rtdb.europe-west1.firebasedatabase.app/recipes.json?auth=' + user.token)
-      }),
-      map(recipes => {
-        return recipes.map(recipe => {
-          return {
-            ...recipe,
-            ingredients: recipe.ingredients ? recipe.ingredients : []
-          };
-        });
-      }),
-      tap(recipes => {
-        this.recipeService.setRecipes(recipes)
-      })
-    )
+    return this.http
+      .get<Recipe[]>('https://recipe-f4353-default-rtdb.europe-west1.firebasedatabase.app/recipes.json')
+      .pipe(
+        map(recipes => {
+          return recipes.map(recipe => {
+            return {
+              ...recipe,
+              ingredients: recipe.ingredients ? recipe.ingredients : []
+            };
+          });
+        }),
+        tap(recipes => {
+          this.recipeService.setRecipes(recipes)
+        })
+      )
   }
 }
