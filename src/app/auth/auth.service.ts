@@ -2,9 +2,13 @@ import {Injectable} from "@angular/core";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {catchError, tap} from "rxjs/operators";
 import {throwError, BehaviorSubject} from "rxjs";
-import {User} from "./user.model";
 import {Router} from "@angular/router";
+import {Store} from "@ngrx/store";
+
+import {User} from "./user.model";
 import {environment} from "../../environments/environment";
+import * as formApp from "../store/app.reducer";
+import * as AuthActions from "./store/auth.actions";
 
 
 export interface AuthResponseData {
@@ -22,7 +26,8 @@ export class AuthService {
   private tokenExpirationTimer: any;
 
   constructor(private http: HttpClient,
-              private router: Router) {
+              private router: Router,
+              private store: Store<formApp.AppState>) {
   }
 
   signup(email: string, password: string) {
@@ -70,14 +75,19 @@ export class AuthService {
     );
 
     if (loadedUser.token) {
-      this.user.next(loadedUser);
+      this.store.dispatch(new AuthActions.Login({
+        email: loadedUser.email,
+        userId: loadedUser.id,
+        token: loadedUser.token,
+        expirationDate: new Date(userData._tokenExpirationDate)
+      }))
       const expirationDuration = new Date(userData._tokenExpirationDate).getTime() - new Date().getTime()
       this.autoLogout(expirationDuration);
     }
   }
 
   logout() {
-    this.user.next(null);
+    this.store.dispatch(new AuthActions.Logout());
     this.router.navigate(['/auth']);
     localStorage.removeItem('userData');
     if (this.tokenExpirationTimer) {
@@ -101,7 +111,12 @@ export class AuthService {
       token,
       expirationDate
     );
-    this.user.next(user);
+    this.store.dispatch(new AuthActions.Login({
+      email: email,
+      userId: userId,
+      token: token,
+      expirationDate: expirationDate
+    }))
     this.autoLogout(expiresIn * 1000);
     localStorage.setItem('userData', JSON.stringify(user));
   }
