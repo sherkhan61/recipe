@@ -43,7 +43,14 @@ export class AuthService {
   }
 
   login(email: string, password: string) {
-
+    return this.http
+      .post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
+        {
+          email: email,
+          password: password,
+          returnSecureToken: true
+        }
+      )
       .pipe(catchError(this.handleError), tap(resData => {
         this.handleAuthentication(resData.email, resData.localId, resData.idToken, +resData.expiresIn);
       }));
@@ -68,7 +75,7 @@ export class AuthService {
     );
 
     if (loadedUser.token) {
-      this.store.dispatch(new AuthActions.Login({
+      this.store.dispatch(new AuthActions.AuthenticateSuccess({
         email: loadedUser.email,
         userId: loadedUser.id,
         token: loadedUser.token,
@@ -104,7 +111,7 @@ export class AuthService {
       token,
       expirationDate
     );
-    this.store.dispatch(new AuthActions.Login({
+    this.store.dispatch(new AuthActions.AuthenticateSuccess({
       email: email,
       userId: userId,
       token: token,
